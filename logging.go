@@ -1,6 +1,7 @@
-package log
+package cloudglog
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,6 +17,7 @@ var (
 	info    *log.Logger
 	warning *log.Logger
 	err     *log.Logger
+	fatal   *log.Logger
 
 	LogLevel int
 )
@@ -24,7 +26,8 @@ func initLogger(
 	traceHandle io.Writer,
 	infoHandle io.Writer,
 	warningHandle io.Writer,
-	errorHandle io.Writer) {
+	errorHandle io.Writer,
+	fatalHandle io.Writer) {
 
 	trace = log.New(traceHandle,
 		"TRACE: ",
@@ -41,23 +44,26 @@ func initLogger(
 	err = log.New(errorHandle,
 		"ERROR: ",
 		log.Ldate|log.Ltime|log.Llongfile)
+	fatal = log.New(fatalHandle,
+		"Fatal: ",
+		log.Ldate|log.Ltime|log.Llongfile)
 
 }
 
 func init() {
-	initLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr)
+	initLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
 	// get LogLevel from env
 	getLogLevel := os.Getenv("LOG_LEVEL")
 	if len(getLogLevel) == 0 {
 		// loglevel is not in env, set to default
 		LogLevel = 0
 	} else {
-		// loglevel is in env convert to int
+		// loglevel is a string, convert it to int
 		var err error
 		LogLevel, err = strconv.Atoi(getLogLevel)
 		if err != nil {
 			// sorry there was an error, fallback to default level
-			Warning("reading loglevel from envieronment variable, falling back to default level 0")
+			Error("reading loglevel from envieronment variable, falling back to default level 0")
 			LogLevel = 0
 		}
 
@@ -71,6 +77,12 @@ func Info(args ...interface{}) {
 	info.Output(CallDepth, fmt.Sprint(args...))
 }
 
+// InfoDepth acts as Info but uses depth to determine which call frame to log.
+// InfoDepth(0, "msg") is the same as Info("msg").
+func InfoDepth(depth int, args ...interface{}) {
+	info.Output(depth, fmt.Sprint(args...))
+}
+
 // Infoln logs to the INFO log.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Infoln(args ...interface{}) {
@@ -80,34 +92,49 @@ func Infoln(args ...interface{}) {
 // Infof logs to the INFO log.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Infof(format string, args ...interface{}) {
-	info.Output(CallDepth, fmt.Sprintf(format, args...))
+
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, format, args...)
+	if buf.Bytes()[buf.Len()-1] != '\n' {
+		buf.WriteByte('\n')
+	}
+	info.Output(CallDepth, buf.String())
 }
 
 // Warning logs to the Warning log.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Warning(args ...interface{}) {
 	warning.Output(CallDepth, fmt.Sprint(args...))
+}
 
+// WarningDepth acts as Warning but uses depth to determine which call frame to log.
+// WarningDepth(0, "msg") is the same as Warning("msg").
+func WarningDepth(depth int, args ...interface{}) {
+	warning.Output(depth, fmt.Sprint(args...))
 }
 
 // Warningln logs to the Warning log.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Warningln(args ...interface{}) {
 	warning.Output(CallDepth, fmt.Sprintln(args...))
-
 }
 
 // Warningf logs to the Warning log.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Warningf(format string, args ...interface{}) {
 	warning.Output(CallDepth, fmt.Sprintf(format, args...))
-
 }
 
 // Error logs to the Error log.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Error(args ...interface{}) {
 	err.Output(CallDepth, fmt.Sprint(args...))
+}
+
+// ErrorDepth acts as Error but uses depth to determine which call frame to log.
+// ErrorDepth(0, "msg") is the same as Error("msg").
+func ErrorDepth(depth int, args ...interface{}) {
+	err.Output(depth, fmt.Sprint(args...))
 }
 
 // Errorln logs to the Error log.
@@ -119,25 +146,75 @@ func Errorln(args ...interface{}) {
 // Errorf logs to the Error log.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Errorf(format string, args ...interface{}) {
-	err.Output(CallDepth, fmt.Sprintf(format, args...))
+
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, format, args...)
+	if buf.Bytes()[buf.Len()-1] != '\n' {
+		buf.WriteByte('\n')
+	}
+	err.Output(CallDepth, buf.String())
 }
 
-// Panic logs to the Error log followed by a call to panic.
+// Fatal logs to the FATAL log
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
-func Panic(args ...interface{}) {
-	log.Output(CallDepth, fmt.Sprint(args...))
+func Fatal(args ...interface{}) {
+	fatal.Output(CallDepth, fmt.Sprint(args...))
 }
 
-// Panicln logs to the Error log followed by a call to panic.
-// Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
-func Panicln(args ...interface{}) {
-	log.Output(CallDepth, fmt.Sprintln(args...))
+// FatalDepth acts as Fatal but uses depth to determine which call frame to log.
+// FatalDepth(0, "msg") is the same as Fatal("msg").
+func FatalDepth(depth int, args ...interface{}) {
+	fatal.Output(depth, fmt.Sprint(args...))
 }
 
-// Panic	f logs to the Error log followed by a call to panic.
+// Fatalln logs to the log.
+func Fatalln(args ...interface{}) {
+	fatal.Output(CallDepth, fmt.Sprintln(args...))
+}
+
+// Fatalf logs to the log.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
-func Panicf(format string, args ...interface{}) {
-	log.Output(CallDepth, fmt.Sprintf(format, args...))
+func Fatalf(format string, args ...interface{}) {
+
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, format, args...)
+	if buf.Bytes()[buf.Len()-1] != '\n' {
+		buf.WriteByte('\n')
+	}
+	fatal.Output(CallDepth, buf.String())
+}
+
+// Exit logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+// Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
+func Exit(args ...interface{}) {
+	fatal.Output(CallDepth, fmt.Sprint(args...))
+	os.Exit(1)
+}
+
+// ExitDepth acts as Exit but uses depth to determine which call frame to log.
+// ExitDepth(0, "msg") is the same as Exit("msg").
+func ExitDepth(depth int, args ...interface{}) {
+	fatal.Output(depth, fmt.Sprint(args...))
+	os.Exit(1)
+}
+
+// Exitln logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+func Exitln(args ...interface{}) {
+	fatal.Output(CallDepth, fmt.Sprintln(args...))
+	os.Exit(1)
+}
+
+// Exitf logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+// Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
+func Exitf(format string, args ...interface{}) {
+
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, format, args...)
+	if buf.Bytes()[buf.Len()-1] != '\n' {
+		buf.WriteByte('\n')
+	}
+	fatal.Output(CallDepth, buf.String())
+	os.Exit(1)
 }
 
 type Verbose bool
