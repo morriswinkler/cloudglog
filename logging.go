@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-const CallDepth = 3
+const CallDepth = 2
 
 var (
 	trace   *log.Logger
@@ -56,6 +56,7 @@ func init() {
 	getLogLevel := os.Getenv("LOG_LEVEL")
 	if len(getLogLevel) == 0 {
 		// loglevel is not in env, set to default
+		Info("missing LOG_LEVEL envieronment variable, falling back to default level 0")
 		LogLevel = 0
 	} else {
 		// loglevel is a string, convert it to int
