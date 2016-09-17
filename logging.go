@@ -8,7 +8,7 @@
 //  DefaultFormat		: the original glog format
 //  ModernFormat		: shorter format, uses brackets to separate Package File and Line
 //
-//
+// Example:
 //  cloudglog.FormatStyle(cloudglog.ModernFormat)
 //
 // Color Styles
@@ -23,7 +23,7 @@
 //  FullColorWithBoldMessage 	: colorize everything with bold colored message
 //  FullColorWithBoldPrefix  	: colorize everything with bold coloring from prefix until line number
 //
-//
+// Example:
 //  cloudglog.ColorStyle(cloudglog.FullColor)
 //
 package cloudglog
