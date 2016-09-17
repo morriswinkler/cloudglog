@@ -5,8 +5,9 @@
 //
 // define the log output format, use FormatStyle(style) to set one of:
 //
-//  DefaultFormat: the original glog format
-//  ModernFormat:  a shorter format that uses brackets to separate Package File and Line
+//  DefaultFormat		: the original glog format
+//  ModernFormat		: shorter format, uses brackets to separate Package File and Line
+//
 //
 //  cloudglog.FormatStyle(cloudglog.ModernFormat)
 //
@@ -14,13 +15,14 @@
 //
 // define coloring schemes, use ColorStyle(style) to set one of:
 //
-//  NoColor                  : no colors
-//  PrefixColor              : colorize from prefix until line number
-//  PrefixBoldColor          : colorize from prefix until line number with bold colors
-//  FullColor                : colorize everything
-//  FullBoldColor            : colorize everything with bold colors
-//  FullColorWithBoldMessage : colorize everything with bold colored message
-//  FullColorWithBoldPrefix  : colorize everything with bold coloring from prefix until line number
+//  NoColor                  	: no colors
+//  PrefixColor              	: colorize from prefix until line number
+//  PrefixBoldColor          	: colorize from prefix until line number with bold colors
+//  FullColor                	: colorize everything
+//  FullBoldColor            	: colorize everything with bold colors
+//  FullColorWithBoldMessage 	: colorize everything with bold colored message
+//  FullColorWithBoldPrefix  	: colorize everything with bold coloring from prefix until line number
+//
 //
 //  cloudglog.ColorStyle(cloudglog.FullColor)
 //
