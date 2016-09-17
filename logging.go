@@ -1,20 +1,35 @@
 // Package cloudglog is a logger that outputs to stdout. It is strongly based on glog but
 // without any kind of buffering.
 //
-// Format styles controls the log output format, use FormatStyle(style) to set one of:
+// Format styles
+//
+// define the log output format, use FormatStyle(style) to set one of:
 //
 // DefaultFormat: the original glog format
 //
-// ModernFormat:  a shorter format that uses [] to separat Package File and Line
+// ModernFormat:  a shorter format that uses brackets to separate Package File and Line
 //
-// Color Style defines coloring schemes, use ColorStyle(style) to set one of:
+//  cloudglog.FormatStyle(cloudglog.ModernFormat)
+//
+// Color Styles
+//
+// define coloring schemes, use ColorStyle(style) to set one of:
+//
 // NoColor                  : no colors
+//
 // PrefixColor              : colorize from prefix until line number
+//
 // PrefixBoldColor          : colorize from prefix until line number with bold colors
+//
 // FullColor                : colorize everything
+//
 // FullBoldColor            : colorize everything with bold colors
+//
 // FullColorWithBoldMessage : colorize everything with bold colored message
+//
 // FullColorWithBoldPrefix  : colorize everything with bold coloring from prefix until line number
+//
+// cloudglog.ColorStyle(cloudglog.FullColor)
 //
 package cloudglog
 
