@@ -26,18 +26,19 @@ import (
 
 const CallDepth = 2 // depth to trace the caller file
 
-var LogLevel int // logging level for V() type calls
+var LogLevel int // logging level for V() type calls, can also be set by LOG_LEVEL environment variable
 
 type formatType int
 
 const (
-	DefaultFormat formatType = iota // classic glog format
-	ModernFormat                    // modern format `LogType: YYYY:MM:YY HH:SS [package][file][line]	message`
+	// formatType controlss the output format style
+	DefaultFormat formatType = iota // PREFIX: YYYY/MM/DD HH:MM:SS Llongfile:Line: Message
+	ModernFormat                    // PREFIX: YYYY/MM/DD HH:MM:SS [package][file][:Line] Message
 )
 
 var format formatType
 
-// SetFormat switches the log FormatType
+// SetFormat changes the formatType
 func SetFormat(f formatType) {
 	format = f
 	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
@@ -46,16 +47,18 @@ func SetFormat(f formatType) {
 type logType int
 
 const (
-	TRACE logType = iota
-	INFO
-	WARNING
-	ERROR
-	FATAL
+	// logType, only used in LogFilter to set log prefix and color if in color mode
+	TRACE   logType = iota // TRACE: ColorCyan
+	INFO                   // INFO: ColorGreen
+	WARNING                // WARNING: ColorYellow
+	ERROR                  // ERROR: ColorRed
+	FATAL                  // FATAL: ColorMagenta
 )
 
 type colorType int
 
 const (
+	// colorType used to set term color
 	ColorBlack colorType = iota + 30
 	ColorRed
 	ColorGreen
@@ -64,6 +67,19 @@ const (
 	ColorMagenta
 	ColorCyan
 	ColorWhite
+)
+
+type colorFormat int
+
+const (
+	// colorFormat used to set colloring style
+	NoColor                  colorFormat = iota // no colors
+	PrefixColor                                 // colorize from prefix until line number
+	PrefixBoldColor                             // colorize from prefix until line number with bold colors
+	FullColor                                   // colorize everything
+	FullBoldColor                               // colorize everything with bold colors
+	FullColorWithBoldMessage                    // colorize everything with bold colored message
+	FullColorWithBoldPrefix                     // colorize everything with bold coloring from prefix until line number
 )
 
 var (
@@ -93,18 +109,6 @@ func colorSeq(color colorType) string {
 func colorSeqBold(color colorType) string {
 	return fmt.Sprintf("\033[%d;1m", int(color))
 }
-
-type colorFormat int
-
-const (
-	NoColor colorFormat = iota // no color
-	PrefixColor
-	PrefixBoldColor
-	FullColor
-	FullBoldColor
-	FullColorWithBoldMessage
-	FullColorWithBoldPrefix
-)
 
 func addColor(lType logType, prefixEnd int, message []string) []string {
 
@@ -184,12 +188,15 @@ func setupLogger(
 		log.Ldate|log.Ltime|log.Llongfile)
 }
 
-func LogFilter(w io.Writer, ltype logType) io.Writer {
+// LogFilter can be used to filter logging of other packages
+// that provide a way to set the log output. It takes a io.Writer
+// as output and a logType and returns a io.Writer.
+func LogFilter(out io.Writer, l logType) io.Writer {
 	switch format {
 	case DefaultFormat:
-		return &defaultLogger{out: w, logType: ltype}
+		return &defaultLogger{out: out, logType: l}
 	case ModernFormat:
-		return &modernLogger{out: w, logType: ltype}
+		return &modernLogger{out: out, logType: l}
 	}
 
 	return ioutil.Discard
@@ -272,10 +279,6 @@ func (m *modernLogger) Write(bytes []byte) (int, error) {
 	modernFormat := strings.Join(format, " ")
 
 	return m.out.Write([]byte(modernFormat))
-}
-
-func ModernLogFilter(w io.Writer, ltype logType) *modernLogger {
-	return &modernLogger{out: w, logType: ltype}
 }
 
 func init() {
