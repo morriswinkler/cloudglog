@@ -11,25 +11,128 @@ import (
 	"strings"
 )
 
-
-
 // FormatType's are different log output styles
 type FormatType int
 
 const (
 	DefaultFormat FormatType = iota // classic glog format
-	ModernFormat			// modern format `LogType: YYYY:MM:YY HH:SS [package][file][line]	message`
+	ModernFormat                    // modern format `LogType: YYYY:MM:YY HH:SS [package][file][line]	message`
 
-	CallDepth = 2			// depth to trace the caller file
+	CallDepth = 2 // depth to trace the caller file
 )
 
+type LogType int
+
+const (
+	TRACE = iota
+	INFO
+	WARNING
+	ERROR
+	FATAL
+)
+
+type color int
+
+const (
+	ColorBlack = iota + 30
+	ColorRed
+	ColorGreen
+	ColorYellow
+	ColorBlue
+	ColorMagenta
+	ColorCyan
+	ColorWhite
+)
 
 var (
-	TRACE   *log.Logger
-	INFO    *log.Logger
-	WARNING *log.Logger
-	ERROR     *log.Logger
-	FATAL   *log.Logger
+	colorFormating colorFormat = NoColor
+
+	colors = []string{
+		TRACE:   ColorSeq(ColorCyan),
+		INFO:    ColorSeq(ColorGreen),
+		WARNING: ColorSeq(ColorYellow),
+		ERROR:   ColorSeq(ColorRed),
+		FATAL:   ColorSeq(ColorMagenta),
+	}
+
+	boldcolors = []string{
+		TRACE:   ColorSeqBold(ColorCyan),
+		INFO:    ColorSeqBold(ColorGreen),
+		WARNING: ColorSeqBold(ColorYellow),
+		ERROR:   ColorSeqBold(ColorRed),
+		FATAL:   ColorSeqBold(ColorMagenta),
+	}
+)
+
+func ColorSeq(color color) string {
+	return fmt.Sprintf("\033[%dm", int(color))
+}
+
+func ColorSeqBold(color color) string {
+	return fmt.Sprintf("\033[%d;1m", int(color))
+}
+
+type colorFormat int
+
+const (
+	NoColor = iota // no color
+	PrefixColor
+	PrefixBoldColor
+	FullColor
+	FullBoldColor
+	FullColorWithBoldMessage
+	FullColorWithBoldPrefix
+)
+
+func addColor(lType LogType, prefixEnd int, message []string) []string {
+
+	var col, bcol string
+
+	switch colorFormating {
+	case PrefixColor:
+		col = colors[lType]
+		message[prefixEnd] = strings.Join([]string{message[prefixEnd], "\033[0m"}, "")
+		message = append([]string{col}, message...)
+	case PrefixBoldColor:
+		col = boldcolors[lType]
+		message[prefixEnd] = strings.Join([]string{message[prefixEnd], "\033[0m"}, "")
+		message = append([]string{col}, message...)
+	case FullColor:
+		col = colors[lType]
+		message = append([]string{col}, message...)
+		message = append(message, "\033[0m")
+	case FullBoldColor:
+		col = boldcolors[lType]
+		message = append([]string{col}, message...)
+		message = append(message, "\033[0m")
+	case FullColorWithBoldMessage:
+		col = colors[lType]
+		bcol = boldcolors[lType]
+		message[prefixEnd] = strings.Join([]string{message[prefixEnd], bcol}, "")
+		message = append([]string{col}, message...)
+		message = append(message, "\033[0m")
+	case FullColorWithBoldPrefix:
+		col = colors[lType]
+		bcol = boldcolors[lType]
+		message[prefixEnd] = strings.Join([]string{message[prefixEnd], col}, "")
+		message = append([]string{bcol}, message...)
+		message = append(message, "\033[0m")
+	}
+
+	return message
+}
+
+// SetColor defines the coloring format
+func SetColors(cformat colorFormat) {
+	colorFormating = cformat
+}
+
+var (
+	traceLog   *log.Logger
+	infoLog    *log.Logger
+	warningLog *log.Logger
+	errorLog   *log.Logger
+	fatalLog   *log.Logger
 
 	LogLevel int
 
@@ -44,52 +147,73 @@ func setupLogger(
 	errorHandle io.Writer,
 	fatalHandle io.Writer) {
 
+	traceLog = log.New(LogFilter(traceHandle, TRACE),
+		"TRACE: ",
+		log.Ldate|log.Ltime|log.Llongfile)
+
+	infoLog = log.New(LogFilter(infoHandle, INFO),
+		"INFO: ",
+		log.Ldate|log.Ltime|log.Llongfile)
+
+	warningLog = log.New(LogFilter(warningHandle, WARNING),
+		"WARNING: ",
+		log.Ldate|log.Ltime|log.Llongfile)
+
+	errorLog = log.New(LogFilter(errorHandle, ERROR),
+		"ERROR: ",
+		log.Ldate|log.Ltime|log.Llongfile)
+	fatalLog = log.New(LogFilter(fatalHandle, FATAL),
+		"Fatal: ",
+		log.Ldate|log.Ltime|log.Llongfile)
+}
+
+func LogFilter(w io.Writer, ltype LogType) io.Writer {
 	switch Format {
-	case DefaultFormat: // default log format
-		TRACE = log.New(traceHandle,
-			"TRACE: ",
-			log.Ldate | log.Ltime | log.Llongfile)
-
-		INFO = log.New(infoHandle,
-			"INFO: ",
-			log.Ldate | log.Ltime | log.Llongfile)
-
-		WARNING = log.New(warningHandle,
-			"WARNING: ",
-			log.Ldate | log.Ltime | log.Llongfile)
-
-		ERROR = log.New(errorHandle,
-			"ERROR: ",
-			log.Ldate | log.Ltime | log.Llongfile)
-		FATAL = log.New(fatalHandle,
-			"Fatal: ",
-			log.Ldate | log.Ltime | log.Llongfile)
-
-	case ModernFormat: // modern log format
-		TRACE = log.New(ModernLogFilter(traceHandle),
-			"TRACE: ",
-			log.Ldate | log.Ltime | log.Llongfile)
-
-		INFO = log.New(ModernLogFilter(infoHandle),
-			"INFO: ",
-			log.Ldate | log.Ltime | log.Llongfile)
-
-		WARNING = log.New(ModernLogFilter(warningHandle),
-			"WARNING: ",
-			log.Ldate | log.Ltime | log.Llongfile)
-
-		ERROR = log.New(ModernLogFilter(errorHandle),
-			"ERROR: ",
-			log.Ldate | log.Ltime | log.Llongfile)
-		FATAL = log.New(ModernLogFilter(fatalHandle),
-			"Fatal: ",
-			log.Ldate | log.Ltime | log.Llongfile)
+	case DefaultFormat:
+		return &defaultLogger{out: w, logType: ltype}
+	case ModernFormat:
+		return &modernLogger{out: w, logType: ltype}
 	}
 
+	return ioutil.Discard
+}
+
+type defaultLogger struct {
+	out     io.Writer
+	logType LogType
+}
+
+func (d *defaultLogger) Write(bytes []byte) (int, error) {
+
+	string_ := string(bytes)
+
+	// splitFunc that splits at avery ' '
+	stringSplit := func(r rune) bool {
+		return r == ' '
+	}
+
+	// split to access Llongfile
+	format := strings.FieldsFunc(string_, stringSplit)
+
+	// find log prefix (starts with '/' and ends with ':')
+	formatByte := []byte(format[3])
+	prefixEnd := 2
+	if (formatByte[0] == '/') && (formatByte[len(formatByte)-1] == ':') {
+		prefixEnd = 3
+	}
+
+	// format color
+	format = addColor(d.logType, prefixEnd, format)
+
+	// join string
+	defaultFormat := strings.Join(format, " ")
+
+	return d.out.Write([]byte(defaultFormat))
 }
 
 type modernLogger struct {
-	out io.Writer
+	out     io.Writer
+	logType LogType
 }
 
 // TODO: check efficiency and maybe reimplement in []byte operations
@@ -105,38 +229,27 @@ func (m *modernLogger) Write(bytes []byte) (int, error) {
 	// split to access Llongfile
 	format := strings.FieldsFunc(string_, stringSplit)
 
+	// find log prefix (starts with '/' and ends with ':')
+	formatByte := []byte(format[3])
+	prefixEnd := 2
+	if (formatByte[0] == '/') && (formatByte[len(formatByte)-1] == ':') {
+		prefixEnd = 3
+	}
+
 	// splitFunc for log.Llongfile
 	longFileSplit := func(r rune) bool {
 		return r == '/' || r == ':'
 	}
-
 	var modernLongFile = make([]string, 3)
+	// split log.Llongfile
+	subFormat := strings.FieldsFunc(format[prefixEnd], longFileSplit)
+	copy(modernLongFile, subFormat[len(subFormat)-3:]) // package, file, line
 
-	// if the log prefix does not end with a space
-	// extract log.Llongfile differently
-	formatByte := []byte(format[3])
-	if (formatByte[0] == '/') && (formatByte[len(formatByte)-1] == ':') {
+	// add []'s and a trailing tab
+	format[prefixEnd] = strings.Join([]string{"[", modernLongFile[0], "]", "[", modernLongFile[1], "]", "[:", modernLongFile[2], "]", "\t"}, "")
 
-		// split: package file line
-		subFormat := strings.FieldsFunc(format[3], longFileSplit)
-		// prefix contains a trailing whitespace
-		copy(modernLongFile, subFormat[len(subFormat) - 3:]) // package, file, line
-
-		// add []'s and a trailing tab
-		format[3] = strings.Join([]string{"[", modernLongFile[0], "]", "[", modernLongFile[1], "]", "[:", modernLongFile[2], "]", "\t" }, "")
-
-	} else {
-
-		// prefix contains no trailing whitespace
-		subFormat := strings.FieldsFunc(format[2], longFileSplit)
-		copy(modernLongFile, subFormat[len(subFormat) - 3:]) // package, file, line
-
-		format = append(format[:2], format[3:]...) // delete format[3]
-
-		// add []'s and a trailing tab
-		format[2] = strings.Join([]string{"[", modernLongFile[0], "]", "[", modernLongFile[1], "]", "[:", modernLongFile[2], "]", "\t" }, "")
-
-	}
+	// format color
+	format = addColor(m.logType, prefixEnd, format)
 
 	// join string
 	modernFormat := strings.Join(format, " ")
@@ -144,10 +257,9 @@ func (m *modernLogger) Write(bytes []byte) (int, error) {
 	return m.out.Write([]byte(modernFormat))
 }
 
-func ModernLogFilter(w io.Writer) *modernLogger {
-	return &modernLogger{out: w}
+func ModernLogFilter(w io.Writer, ltype LogType) *modernLogger {
+	return &modernLogger{out: w, logType: ltype}
 }
-
 
 // SetFormat switches the log FormatType
 func SetFormat(format FormatType) {
@@ -182,19 +294,19 @@ func init() {
 // Info logs to the INFO log.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Info(args ...interface{}) {
-	INFO.Output(CallDepth, fmt.Sprint(args...))
+	infoLog.Output(CallDepth, fmt.Sprint(args...))
 }
 
 // InfoDepth acts as Info but uses depth to determine which call frame to log.
 // InfoDepth(0, "msg") is the same as Info("msg").
 func InfoDepth(depth int, args ...interface{}) {
-	INFO.Output(depth, fmt.Sprint(args...))
+	infoLog.Output(depth, fmt.Sprint(args...))
 }
 
 // Infoln logs to the INFO log.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Infoln(args ...interface{}) {
-	INFO.Output(CallDepth, fmt.Sprintln(args...))
+	infoLog.Output(CallDepth, fmt.Sprintln(args...))
 }
 
 // Infof logs to the INFO log.
@@ -206,49 +318,49 @@ func Infof(format string, args ...interface{}) {
 	if buf.Bytes()[buf.Len()-1] != '\n' {
 		buf.WriteByte('\n')
 	}
-	INFO.Output(CallDepth, buf.String())
+	infoLog.Output(CallDepth, buf.String())
 }
 
 // Warning logs to the WARNING log.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Warning(args ...interface{}) {
-	WARNING.Output(CallDepth, fmt.Sprint(args...))
+	warningLog.Output(CallDepth, fmt.Sprint(args...))
 }
 
 // WarningDepth acts as WARNING but uses depth to determine which call frame to log.
 // WarningDepth(0, "msg") is the same as Warning("msg").
 func WarningDepth(depth int, args ...interface{}) {
-	WARNING.Output(depth, fmt.Sprint(args...))
+	warningLog.Output(depth, fmt.Sprint(args...))
 }
 
 // Warningln logs to the WARNING log.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Warningln(args ...interface{}) {
-	WARNING.Output(CallDepth, fmt.Sprintln(args...))
+	warningLog.Output(CallDepth, fmt.Sprintln(args...))
 }
 
 // Warningf logs to the WARNING log.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Warningf(format string, args ...interface{}) {
-	WARNING.Output(CallDepth, fmt.Sprintf(format, args...))
+	warningLog.Output(CallDepth, fmt.Sprintf(format, args...))
 }
 
 // Error logs to the ERROR log.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Error(args ...interface{}) {
-	ERROR.Output(CallDepth, fmt.Sprint(args...))
+	errorLog.Output(CallDepth, fmt.Sprint(args...))
 }
 
 // ErrorDepth acts as ERROR but uses depth to determine which call frame to log.
 // ErrorDepth(0, "msg") is the same as Error("msg").
 func ErrorDepth(depth int, args ...interface{}) {
-	ERROR.Output(depth, fmt.Sprint(args...))
+	errorLog.Output(depth, fmt.Sprint(args...))
 }
 
 // Errorln logs to the ERROR log.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Errorln(args ...interface{}) {
-	ERROR.Output(CallDepth, fmt.Sprintln(args...))
+	errorLog.Output(CallDepth, fmt.Sprintln(args...))
 }
 
 // Errorf logs to the ERROR log.
@@ -260,24 +372,24 @@ func Errorf(format string, args ...interface{}) {
 	if buf.Bytes()[buf.Len()-1] != '\n' {
 		buf.WriteByte('\n')
 	}
-	ERROR.Output(CallDepth, buf.String())
+	errorLog.Output(CallDepth, buf.String())
 }
 
 // Fatal logs to the FATAL log
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Fatal(args ...interface{}) {
-	FATAL.Output(CallDepth, fmt.Sprint(args...))
+	fatalLog.Output(CallDepth, fmt.Sprint(args...))
 }
 
 // FatalDepth acts as FATAL but uses depth to determine which call frame to log.
 // FatalDepth(0, "msg") is the same as Fatal("msg").
 func FatalDepth(depth int, args ...interface{}) {
-	FATAL.Output(depth, fmt.Sprint(args...))
+	fatalLog.Output(depth, fmt.Sprint(args...))
 }
 
 // Fatalln logs to the FATAL log.
 func Fatalln(args ...interface{}) {
-	FATAL.Output(CallDepth, fmt.Sprintln(args...))
+	fatalLog.Output(CallDepth, fmt.Sprintln(args...))
 }
 
 // Fatalf logs to the FATAL log.
@@ -289,26 +401,26 @@ func Fatalf(format string, args ...interface{}) {
 	if buf.Bytes()[buf.Len()-1] != '\n' {
 		buf.WriteByte('\n')
 	}
-	FATAL.Output(CallDepth, buf.String())
+	fatalLog.Output(CallDepth, buf.String())
 }
 
 // Exit logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Exit(args ...interface{}) {
-	FATAL.Output(CallDepth, fmt.Sprint(args...))
+	fatalLog.Output(CallDepth, fmt.Sprint(args...))
 	os.Exit(1)
 }
 
 // ExitDepth acts as Exit but uses depth to determine which call frame to log.
 // ExitDepth(0, "msg") is the same as Exit("msg").
 func ExitDepth(depth int, args ...interface{}) {
-	FATAL.Output(depth, fmt.Sprint(args...))
+	fatalLog.Output(depth, fmt.Sprint(args...))
 	os.Exit(1)
 }
 
 // Exitln logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
 func Exitln(args ...interface{}) {
-	FATAL.Output(CallDepth, fmt.Sprintln(args...))
+	fatalLog.Output(CallDepth, fmt.Sprintln(args...))
 	os.Exit(1)
 }
 
@@ -321,7 +433,7 @@ func Exitf(format string, args ...interface{}) {
 	if buf.Bytes()[buf.Len()-1] != '\n' {
 		buf.WriteByte('\n')
 	}
-	FATAL.Output(CallDepth, buf.String())
+	fatalLog.Output(CallDepth, buf.String())
 	os.Exit(1)
 }
 
@@ -353,7 +465,7 @@ func V(level int) Verbose {
 // See the documentation of V for usage.
 func (v Verbose) Info(args ...interface{}) {
 	if v {
-		INFO.Output(CallDepth+1, fmt.Sprint(args...))
+		infoLog.Output(CallDepth+1, fmt.Sprint(args...))
 	}
 }
 
@@ -361,7 +473,7 @@ func (v Verbose) Info(args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) InfoDepth(depth int, args ...interface{}) {
 	if v {
-		INFO.Output(depth, fmt.Sprint(args...))
+		infoLog.Output(depth, fmt.Sprint(args...))
 	}
 }
 
@@ -369,7 +481,7 @@ func (v Verbose) InfoDepth(depth int, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Infoln(args ...interface{}) {
 	if v {
-		INFO.Output(CallDepth+1, fmt.Sprintln(args...))
+		infoLog.Output(CallDepth+1, fmt.Sprintln(args...))
 	}
 }
 
@@ -382,7 +494,7 @@ func (v Verbose) Infof(format string, args ...interface{}) {
 		if buf.Bytes()[buf.Len()-1] != '\n' {
 			buf.WriteByte('\n')
 		}
-		INFO.Output(CallDepth+1, buf.String())
+		infoLog.Output(CallDepth+1, buf.String())
 	}
 }
 
@@ -390,7 +502,7 @@ func (v Verbose) Infof(format string, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Warning(args ...interface{}) {
 	if v {
-		WARNING.Output(CallDepth+1, fmt.Sprint(args...))
+		warningLog.Output(CallDepth+1, fmt.Sprint(args...))
 	}
 }
 
@@ -398,15 +510,15 @@ func (v Verbose) Warning(args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) WarningDepth(depth int, args ...interface{}) {
 	if v {
-		WARNING.Output(depth, fmt.Sprint(args...))
+		warningLog.Output(depth, fmt.Sprint(args...))
 	}
 }
 
 // Warningln is equivalent to the global Warningln function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose)Warningln(args ...interface{}) {
+func (v Verbose) Warningln(args ...interface{}) {
 	if v {
-		WARNING.Output(CallDepth+1, fmt.Sprintln(args...))
+		warningLog.Output(CallDepth+1, fmt.Sprintln(args...))
 	}
 }
 
@@ -414,7 +526,7 @@ func (v Verbose)Warningln(args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Warningf(format string, args ...interface{}) {
 	if v {
-		WARNING.Output(CallDepth+1, fmt.Sprintf(format, args...))
+		warningLog.Output(CallDepth+1, fmt.Sprintf(format, args...))
 	}
 }
 
@@ -422,7 +534,7 @@ func (v Verbose) Warningf(format string, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Error(args ...interface{}) {
 	if v {
-		ERROR.Output(CallDepth+1, fmt.Sprint(args...))
+		errorLog.Output(CallDepth+1, fmt.Sprint(args...))
 	}
 }
 
@@ -430,7 +542,7 @@ func (v Verbose) Error(args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) ErrorDepth(depth int, args ...interface{}) {
 	if v {
-		ERROR.Output(depth, fmt.Sprint(args...))
+		errorLog.Output(depth, fmt.Sprint(args...))
 	}
 }
 
@@ -438,7 +550,7 @@ func (v Verbose) ErrorDepth(depth int, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Errorln(args ...interface{}) {
 	if v {
-		ERROR.Output(CallDepth+1, fmt.Sprintln(args...))
+		errorLog.Output(CallDepth+1, fmt.Sprintln(args...))
 	}
 }
 
@@ -448,10 +560,10 @@ func (v Verbose) Errorf(format string, args ...interface{}) {
 	if v {
 		var buf bytes.Buffer
 		fmt.Fprintf(&buf, format, args...)
-		if buf.Bytes()[buf.Len() - 1] != '\n' {
+		if buf.Bytes()[buf.Len()-1] != '\n' {
 			buf.WriteByte('\n')
 		}
-		ERROR.Output(CallDepth+1, buf.String())
+		errorLog.Output(CallDepth+1, buf.String())
 	}
 }
 
@@ -459,7 +571,7 @@ func (v Verbose) Errorf(format string, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Fatal(args ...interface{}) {
 	if v {
-		FATAL.Output(CallDepth+1, fmt.Sprint(args...))
+		fatalLog.Output(CallDepth+1, fmt.Sprint(args...))
 	}
 }
 
@@ -467,7 +579,7 @@ func (v Verbose) Fatal(args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) FatalDepth(depth int, args ...interface{}) {
 	if v {
-		FATAL.Output(depth, fmt.Sprint(args...))
+		fatalLog.Output(depth, fmt.Sprint(args...))
 	}
 }
 
@@ -475,7 +587,7 @@ func (v Verbose) FatalDepth(depth int, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Fatalln(args ...interface{}) {
 	if v {
-		FATAL.Output(CallDepth+1, fmt.Sprintln(args...))
+		fatalLog.Output(CallDepth+1, fmt.Sprintln(args...))
 	}
 }
 
@@ -485,10 +597,10 @@ func (v Verbose) Fatalf(format string, args ...interface{}) {
 	if v {
 		var buf bytes.Buffer
 		fmt.Fprintf(&buf, format, args...)
-		if buf.Bytes()[buf.Len() - 1] != '\n' {
+		if buf.Bytes()[buf.Len()-1] != '\n' {
 			buf.WriteByte('\n')
 		}
-		FATAL.Output(CallDepth+1, buf.String())
+		fatalLog.Output(CallDepth+1, buf.String())
 	}
 }
 
@@ -496,7 +608,7 @@ func (v Verbose) Fatalf(format string, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Exit(args ...interface{}) {
 	if v {
-		FATAL.Output(CallDepth+1, fmt.Sprint(args...))
+		fatalLog.Output(CallDepth+1, fmt.Sprint(args...))
 		os.Exit(1)
 	}
 }
@@ -505,7 +617,7 @@ func (v Verbose) Exit(args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) ExitDepth(depth int, args ...interface{}) {
 	if v {
-		FATAL.Output(depth, fmt.Sprint(args...))
+		fatalLog.Output(depth, fmt.Sprint(args...))
 		os.Exit(1)
 	}
 }
@@ -514,7 +626,7 @@ func (v Verbose) ExitDepth(depth int, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Exitln(args ...interface{}) {
 	if v {
-		FATAL.Output(CallDepth+1, fmt.Sprintln(args...))
+		fatalLog.Output(CallDepth+1, fmt.Sprintln(args...))
 		os.Exit(1)
 	}
 }
@@ -525,10 +637,10 @@ func (v Verbose) Exitf(format string, args ...interface{}) {
 	if v {
 		var buf bytes.Buffer
 		fmt.Fprintf(&buf, format, args...)
-		if buf.Bytes()[buf.Len() - 1] != '\n' {
+		if buf.Bytes()[buf.Len()-1] != '\n' {
 			buf.WriteByte('\n')
 		}
-		FATAL.Output(CallDepth+1, buf.String())
+		fatalLog.Output(CallDepth+1, buf.String())
 		os.Exit(1)
 	}
 }
