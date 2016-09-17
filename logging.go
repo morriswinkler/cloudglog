@@ -26,7 +26,9 @@
 // Example:
 //  cloudglog.ColorStyle(cloudglog.FullColor)
 //
-// LogFilter can be used to filter logging of other packages
+// LogFilter
+//
+// can be used to filter logging of other packages
 // that provide a way to set the log output. It takes a io.Writer
 // as output and a logType and returns a io.Writer.
 //
