@@ -1,16 +1,21 @@
-// Package cloudglog is a logger that outputs to stdout.
-// It is based on glog without any buffering.
+// Package cloudglog is a logger that outputs to stdout. It is strongly based on glog but
+// without any kind of buffering.
 //
-// Features:
+// Format styles controls the log output format, use FormatStyle(style) to set one of:
 //
-// FormatType
-// There are two format styles implemented.
+// DefaultFormat: the original glog format
 //
-// DefaultFormat: PREFIX: YYYY/MM/DD HH:MM:SS Llongfile:Line: Message
+// ModernFormat:  a shorter format that uses [] to separat Package File and Line
 //
-// ModernFormat:  PREFIX: YYYY/MM/DD HH:MM:SS [package][file][:Line] Message
+// Color Style defines coloring schemes, use ColorStyle(style) to set one of:
+// NoColor                  : no colors
+// PrefixColor              : colorize from prefix until line number
+// PrefixBoldColor          : colorize from prefix until line number with bold colors
+// FullColor                : colorize everything
+// FullBoldColor            : colorize everything with bold colors
+// FullColorWithBoldMessage : colorize everything with bold colored message
+// FullColorWithBoldPrefix  : colorize everything with bold coloring from prefix until line number
 //
-// Colored output can be turned on with SetColor()
 package cloudglog
 
 import (
@@ -28,19 +33,19 @@ const CallDepth = 2 // depth to trace the caller file
 
 var LogLevel int // logging level for V() type calls, can also be set by LOG_LEVEL environment variable
 
-type formatType int
+type formatStyle int
 
 const (
 	// formatType controlss the output format style
-	DefaultFormat formatType = iota // PREFIX: YYYY/MM/DD HH:MM:SS Llongfile:Line: Message
-	ModernFormat                    // PREFIX: YYYY/MM/DD HH:MM:SS [package][file][:Line] Message
+	DefaultFormat formatStyle = iota // PREFIX: YYYY/MM/DD HH:MM:SS log.Llongfile Message
+	ModernFormat                     // PREFIX: YYYY/MM/DD HH:MM:SS [Package][File][:Line] Message
 )
 
-var format formatType
+var currentFormat formatStyle
 
 // SetFormat changes the formatType
-func SetFormat(f formatType) {
-	format = f
+func FormatStyle(f formatStyle) {
+	currentFormat = f
 	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
 }
 
@@ -192,7 +197,7 @@ func setupLogger(
 // that provide a way to set the log output. It takes a io.Writer
 // as output and a logType and returns a io.Writer.
 func LogFilter(out io.Writer, l logType) io.Writer {
-	switch format {
+	switch currentFormat {
 	case DefaultFormat:
 		return &defaultLogger{out: out, logType: l}
 	case ModernFormat:
@@ -300,7 +305,7 @@ func init() {
 
 	}
 
-	format = DefaultFormat // init with DefaultFormat
+	currentFormat = DefaultFormat // init with DefaultFormat
 	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
 }
 
