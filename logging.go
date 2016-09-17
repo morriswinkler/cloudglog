@@ -7,6 +7,7 @@
 // There are two format styles implemented.
 //
 // DefaultFormat: PREFIX: YYYY/MM/DD HH:MM:SS Llongfile:Line: Message
+//
 // ModernFormat:  PREFIX: YYYY/MM/DD HH:MM:SS [package][file][:Line] Message
 //
 // Colored output can be turned on with SetColor()
@@ -446,18 +447,19 @@ func Exitf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
+// Verbose is a boolean type that implements Infof (like Printf) etc.
+// See the documentation of V for more information.
 type Verbose bool
 
 // V reports whether verbosity at the call site is at least the requested level.
 // The returned value is a boolean of type Verbose, which implements Info, Infoln
 // and Infof. These methods will write to the Info log if called.
 // Thus, one may write either
-//	if glog.V(2) { glog.Info("log this") }
+//	if cloudglog.V(2) { cloudglog.Info("log this") }
 // or
-//	glog.V(2).Info("log this")
+//	cloudglog.V(2).Info("log this")
 // The second form is shorter but the first is cheaper if logging is off because it does
 // not evaluate its arguments.
-
 func V(level int) Verbose {
 	// This function tries hard to be cheap unless there's work to do.
 	// The fast path is two atomic loads and compares.
