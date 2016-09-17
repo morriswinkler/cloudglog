@@ -30,6 +30,8 @@
 // that provide a way to set the log output. It takes a io.Writer
 // as output and a logType and returns a io.Writer.
 //
+// TODO: make this function more idiomatic
+//
 // Example:
 //   ERROR = log.New(cloudglog.LogFilter(os.Stdout, cloudglog.ERROR),
 //  	"ERROR: ",
@@ -216,6 +218,8 @@ func setupLogger(
 // that provide a way to set the log output. It takes a io.Writer
 // as output and a logType and returns a io.Writer.
 func LogFilter(out io.Writer, l logType) io.Writer {
+
+	// TODO: make this more idiomatic
 	switch currentFormat {
 	case DefaultFormat:
 		return &defaultLogger{out: out, logType: l}
