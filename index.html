@@ -1,0 +1,518 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Cloudglog by morriswinkler</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Cloudglog</h1>
+        <p>glog like go logger with focus on cloud deployments ( logs only to STDOUT )</p>
+
+        <p class="view"><a href="https://github.com/morriswinkler/cloudglog">View the Project on GitHub <small>morriswinkler/cloudglog</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/morriswinkler/cloudglog/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/morriswinkler/cloudglog/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/morriswinkler/cloudglog">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="cloudglog" class="anchor" href="#cloudglog" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>cloudglog</h1>
+
+<h2></h2>
+
+<pre><code>import "github.com/morriswinkler/cloudglog"
+</code></pre>
+
+<p>Package cloudglog is a logger that outputs to stdout. It is strongly based on
+glog but without any kind of buffering.</p>
+
+<p>Format styles</p>
+
+<p>define the log output format, use FormatStyle(style) to set one of:</p>
+
+<pre><code>DefaultFormat       : the original glog format
+ModernFormat        : shorter format, uses brackets to sep Package, File, Line
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code>cloudglog.FormatStyle(cloudglog.ModernFormat)
+</code></pre>
+
+<h3>
+<a id="color-styles" class="anchor" href="#color-styles" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Color Styles</h3>
+
+<p>define coloring schemes, use ColorStyle(style) to set one of:</p>
+
+<pre><code>NoColor                     : no colors
+PrefixColor                 : colorize from prefix until line number
+PrefixBoldColor             : colorize from prefix until line number with bold colors
+FullColor                   : colorize everything
+FullBoldColor               : colorize everything with bold colors
+FullColorWithBoldMessage    : colorize everything with bold colored message
+FullColorWithBoldPrefix     : colorize everything with bold coloring from prefix until line number
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code>cloudglog.ColorStyle(cloudglog.FullColor)
+</code></pre>
+
+<h3>
+<a id="logfilter" class="anchor" href="#logfilter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>LogFilter</h3>
+
+<p>can be used to filter logging of other packages that provide a way to set the
+log output. It takes a io.Writer as output and a logType and returns a
+io.Writer.</p>
+
+<p>TODO: make this function more idiomatic</p>
+
+<p>Example:</p>
+
+<pre><code> ERROR = log.New(cloudglog.LogFilter(os.Stdout, cloudglog.ERROR),
+    "ERROR: ",
+    log.Ldate|log.Ltime|log.Llongfile)
+</code></pre>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">const</span> (
+    <span class="pl-c">// formatStyle controlss the output format</span>
+    <span class="pl-v">DefaultFormat</span> formatStyle = <span class="pl-c1">iota</span> <span class="pl-c">// PREFIX: YYYY/MM/DD HH:MM:SS log.Llongfile Message</span>
+    <span class="pl-v">ModernFormat</span>                     <span class="pl-c">// PREFIX: YYYY/MM/DD HH:MM:SS [Package][File][:Line] Message</span>
+)</pre></div>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">const</span> (
+    <span class="pl-c">// logType, only used in LogFilter to set the right color</span>
+    <span class="pl-c">// TODO: while reworking LogFilter overhink this too</span>
+    <span class="pl-v">TRACE</span>   logType = <span class="pl-c1">iota</span> <span class="pl-c">// TRACE: ColorCyan</span>
+    <span class="pl-v">INFO</span>                   <span class="pl-c">// INFO: ColorGreen</span>
+    <span class="pl-v">WARNING</span>                <span class="pl-c">// WARNING: ColorYellow</span>
+    <span class="pl-v">ERROR</span>                  <span class="pl-c">// ERROR: ColorRed</span>
+    <span class="pl-v">FATAL</span>                  <span class="pl-c">// FATAL: ColorMagenta</span>
+)</pre></div>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">const</span> (
+    <span class="pl-c">// colorType used to set term color</span>
+    <span class="pl-v">ColorBlack</span> colorType = <span class="pl-c1">iota</span> + <span class="pl-c1">30</span>
+    <span class="pl-v">ColorRed</span>
+    <span class="pl-v">ColorGreen</span>
+    <span class="pl-v">ColorYellow</span>
+    <span class="pl-v">ColorBlue</span>
+    <span class="pl-v">ColorMagenta</span>
+    <span class="pl-v">ColorCyan</span>
+    <span class="pl-v">ColorWhite</span>
+)</pre></div>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">const</span> (
+    <span class="pl-c">// colorStyle used to set coloring</span>
+    <span class="pl-v">NoColor</span>                  colorStyle = <span class="pl-c1">iota</span> <span class="pl-c">// no colors</span>
+    <span class="pl-v">PrefixColor</span>                                <span class="pl-c">// colorize from prefix until line number</span>
+    <span class="pl-v">PrefixBoldColor</span>                            <span class="pl-c">// colorize from prefix until line number with bold colors</span>
+    <span class="pl-v">FullColor</span>                                  <span class="pl-c">// colorize everything</span>
+    <span class="pl-v">FullBoldColor</span>                              <span class="pl-c">// colorize everything with bold colors</span>
+    <span class="pl-v">FullColorWithBoldMessage</span>                   <span class="pl-c">// colorize everything with bold colored message</span>
+    <span class="pl-v">FullColorWithBoldPrefix</span>                    <span class="pl-c">// colorize everything with bold coloring from prefix until line number</span>
+)</pre></div>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">const</span> <span class="pl-v">CallDepth</span> = <span class="pl-c1">2</span> <span class="pl-c">// depth to trace the caller file</span>
+</pre></div>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">var</span> <span class="pl-smi">LogLevel</span> <span class="pl-k">int</span> <span class="pl-c">// logging level for V() type calls, can also be set by LOG_LEVEL environment variable</span>
+</pre></div>
+
+<h4>
+<a id="func--colorsstyle" class="anchor" href="#func--colorsstyle" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  ColorsStyle</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">ColorsStyle</span>(<span class="pl-v">cStyle</span> <span class="pl-v">colorStyle</span>)</pre></div>
+
+<p>SetColor defines the coloring format</p>
+
+<h4>
+<a id="func--error" class="anchor" href="#func--error" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Error</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Error</span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Error logs to the ERROR log. Arguments are handled in the manner of fmt.Print; a
+newline is appended if missing.</p>
+
+<h4>
+<a id="func--errordepth" class="anchor" href="#func--errordepth" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  ErrorDepth</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">ErrorDepth</span>(<span class="pl-v">depth</span> <span class="pl-v">int</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>ErrorDepth acts as ERROR but uses depth to determine which call frame to log.
+ErrorDepth(0, "msg") is the same as Error("msg").</p>
+
+<h4>
+<a id="func--errorf" class="anchor" href="#func--errorf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Errorf</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Errorf</span>(<span class="pl-v">format</span> <span class="pl-v">string</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Errorf logs to the ERROR log. Arguments are handled in the manner of fmt.Printf;
+a newline is appended if missing.</p>
+
+<h4>
+<a id="func--errorln" class="anchor" href="#func--errorln" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Errorln</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Errorln</span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Errorln logs to the ERROR log. Arguments are handled in the manner of
+fmt.Println; a newline is appended if missing.</p>
+
+<h4>
+<a id="func--exit" class="anchor" href="#func--exit" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Exit</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Exit</span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Exit logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+Arguments are handled in the manner of fmt.Print; a newline is appended if
+missing.</p>
+
+<h4>
+<a id="func--exitdepth" class="anchor" href="#func--exitdepth" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  ExitDepth</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">ExitDepth</span>(<span class="pl-v">depth</span> <span class="pl-v">int</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>ExitDepth acts as Exit but uses depth to determine which call frame to log.
+ExitDepth(0, "msg") is the same as Exit("msg").</p>
+
+<h4>
+<a id="func--exitf" class="anchor" href="#func--exitf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Exitf</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Exitf</span>(<span class="pl-v">format</span> <span class="pl-v">string</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Exitf logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+Arguments are handled in the manner of fmt.Printf; a newline is appended if
+missing.</p>
+
+<h4>
+<a id="func--exitln" class="anchor" href="#func--exitln" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Exitln</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Exitln</span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Exitln logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).</p>
+
+<h4>
+<a id="func--fatal" class="anchor" href="#func--fatal" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Fatal</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Fatal</span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Fatal logs to the FATAL log Arguments are handled in the manner of fmt.Print; a
+newline is appended if missing.</p>
+
+<h4>
+<a id="func--fataldepth" class="anchor" href="#func--fataldepth" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  FatalDepth</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">FatalDepth</span>(<span class="pl-v">depth</span> <span class="pl-v">int</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>FatalDepth acts as FATAL but uses depth to determine which call frame to log.
+FatalDepth(0, "msg") is the same as Fatal("msg").</p>
+
+<h4>
+<a id="func--fatalf" class="anchor" href="#func--fatalf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Fatalf</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Fatalf</span>(<span class="pl-v">format</span> <span class="pl-v">string</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Fatalf logs to the FATAL log. Arguments are handled in the manner of fmt.Printf;
+a newline is appended if missing.</p>
+
+<h4>
+<a id="func--fatalln" class="anchor" href="#func--fatalln" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Fatalln</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Fatalln</span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Fatalln logs to the FATAL log.</p>
+
+<h4>
+<a id="func--formatstyle" class="anchor" href="#func--formatstyle" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  FormatStyle</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">FormatStyle</span>(<span class="pl-v">f</span> <span class="pl-v">formatStyle</span>)</pre></div>
+
+<p>FormatStyle changes the formatStyle</p>
+
+<h4>
+<a id="func--info" class="anchor" href="#func--info" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Info</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Info</span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Info logs to the INFO log. Arguments are handled in the manner of fmt.Print; a
+newline is appended if missing.</p>
+
+<h4>
+<a id="func--infodepth" class="anchor" href="#func--infodepth" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  InfoDepth</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">InfoDepth</span>(<span class="pl-v">depth</span> <span class="pl-v">int</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>InfoDepth acts as Info but uses depth to determine which call frame to log.
+InfoDepth(0, "msg") is the same as Info("msg").</p>
+
+<h4>
+<a id="func--infof" class="anchor" href="#func--infof" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Infof</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Infof</span>(<span class="pl-v">format</span> <span class="pl-v">string</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Infof logs to the INFO log. Arguments are handled in the manner of fmt.Printf; a
+newline is appended if missing.</p>
+
+<h4>
+<a id="func--infoln" class="anchor" href="#func--infoln" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Infoln</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Infoln</span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Infoln logs to the INFO log. Arguments are handled in the manner of fmt.Println;
+a newline is appended if missing.</p>
+
+<h4>
+<a id="func--logfilter" class="anchor" href="#func--logfilter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  LogFilter</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">LogFilter</span>(<span class="pl-v">out</span> <span class="pl-v">io</span>.<span class="pl-v">Writer</span>, <span class="pl-v">l</span> <span class="pl-v">logType</span>) <span class="pl-v">io</span>.<span class="pl-v">Writer</span></pre></div>
+
+<p>LogFilter can be used to filter logging of other packages that provide a way to
+set the log output. It takes a io.Writer as output and a logType and returns a
+io.Writer.</p>
+
+<h4>
+<a id="func--warning" class="anchor" href="#func--warning" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Warning</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Warning</span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Warning logs to the WARNING log. Arguments are handled in the manner of
+fmt.Print; a newline is appended if missing.</p>
+
+<h4>
+<a id="func--warningdepth" class="anchor" href="#func--warningdepth" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  WarningDepth</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">WarningDepth</span>(<span class="pl-v">depth</span> <span class="pl-v">int</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>WarningDepth acts as WARNING but uses depth to determine which call frame to
+log. WarningDepth(0, "msg") is the same as Warning("msg").</p>
+
+<h4>
+<a id="func--warningf" class="anchor" href="#func--warningf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Warningf</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Warningf</span>(<span class="pl-v">format</span> <span class="pl-v">string</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Warningf logs to the WARNING log. Arguments are handled in the manner of
+fmt.Printf; a newline is appended if missing.</p>
+
+<h4>
+<a id="func--warningln" class="anchor" href="#func--warningln" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  Warningln</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">Warningln</span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Warningln logs to the WARNING log. Arguments are handled in the manner of
+fmt.Println; a newline is appended if missing.</p>
+
+<h4>
+<a id="type-verbosity" class="anchor" href="#type-verbosity" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>type Verbosity</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">type</span> <span class="pl-v">Verbosity</span> <span class="pl-k">bool</span></pre></div>
+
+<p>Verbosity is a boolean type that implements Infof (like Printf) etc. See the
+documentation of V for more information.</p>
+
+<h4>
+<a id="func--v" class="anchor" href="#func--v" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func  V</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">V</span>(<span class="pl-v">level</span> <span class="pl-v">int</span>) <span class="pl-v">Verbosity</span></pre></div>
+
+<p>V reports whether verbosity at the call site is at least the requested level.
+The returned value is a boolean of type Verbosity, which implements Info, Infoln
+and Infof. These methods will write to the Info log if called. Thus, one may
+write either</p>
+
+<pre><code>if cloudglog.V(2) { cloudglog.Info("log this") }
+</code></pre>
+
+<p>or</p>
+
+<pre><code>cloudglog.V(2).Info("log this")
+</code></pre>
+
+<p>The second form is shorter but the first is cheaper if logging is off because it
+does not evaluate its arguments.</p>
+
+<h4>
+<a id="func-verbosity-error" class="anchor" href="#func-verbosity-error" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Error</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Error</span></span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Error is equivalent to the global Error function, guarded by the value of v. See
+the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-errordepth" class="anchor" href="#func-verbosity-errordepth" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) ErrorDepth</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">ErrorDepth</span></span>(<span class="pl-v">depth</span> <span class="pl-v">int</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>ErrorDepth is equivalent to the global ErrorDepth function, guarded by the value
+of v. See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-errorf" class="anchor" href="#func-verbosity-errorf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Errorf</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Errorf</span></span>(<span class="pl-v">format</span> <span class="pl-v">string</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Errorf is equivalent to the global Errorf function, guarded by the value of v.
+See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-errorln" class="anchor" href="#func-verbosity-errorln" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Errorln</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Errorln</span></span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Errorln is equivalent to the global Errorln function, guarded by the value of v.
+See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-exit" class="anchor" href="#func-verbosity-exit" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Exit</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Exit</span></span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Exit is equivalent to the global Exit function, guarded by the value of v. See
+the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-exitdepth" class="anchor" href="#func-verbosity-exitdepth" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) ExitDepth</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">ExitDepth</span></span>(<span class="pl-v">depth</span> <span class="pl-v">int</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>c is equivalent to the global Exitln function, guarded by the value of v. See
+the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-exitf" class="anchor" href="#func-verbosity-exitf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Exitf</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Exitf</span></span>(<span class="pl-v">format</span> <span class="pl-v">string</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Exitf is equivalent to the global Exitf function, guarded by the value of v. See
+the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-exitln" class="anchor" href="#func-verbosity-exitln" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Exitln</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Exitln</span></span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Exitln is equivalent to the global Exitln function, guarded by the value of v.
+See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-fatal" class="anchor" href="#func-verbosity-fatal" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Fatal</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Fatal</span></span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Fatal is equivalent to the global Fatal function, guarded by the value of v. See
+the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-fataldepth" class="anchor" href="#func-verbosity-fataldepth" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) FatalDepth</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">FatalDepth</span></span>(<span class="pl-v">depth</span> <span class="pl-v">int</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>FatalDepth is equivalent to the global FatalDepth function, guarded by the value
+of v. See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-fatalf" class="anchor" href="#func-verbosity-fatalf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Fatalf</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Fatalf</span></span>(<span class="pl-v">format</span> <span class="pl-v">string</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Fatalf is equivalent to the global Fatalf function, guarded by the value of v.
+See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-fatalln" class="anchor" href="#func-verbosity-fatalln" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Fatalln</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Fatalln</span></span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Fatalln is equivalent to the global Fatalln function, guarded by the value of v.
+See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-info" class="anchor" href="#func-verbosity-info" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Info</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Info</span></span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Info is equivalent to the global Info function, guarded by the value of v. See
+the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-infodepth" class="anchor" href="#func-verbosity-infodepth" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) InfoDepth</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">InfoDepth</span></span>(<span class="pl-v">depth</span> <span class="pl-v">int</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>InfoDepth is equivalent to the global InfoDepth function, guarded by the value
+of v. See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-infof" class="anchor" href="#func-verbosity-infof" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Infof</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Infof</span></span>(<span class="pl-v">format</span> <span class="pl-v">string</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Infof is equivalent to the global Infof function, guarded by the value of v. See
+the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-infoln" class="anchor" href="#func-verbosity-infoln" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Infoln</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Infoln</span></span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Infoln is equivalent to the global Infoln function, guarded by the value of v.
+See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-warning" class="anchor" href="#func-verbosity-warning" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Warning</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Warning</span></span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Warning is equivalent to the global Warning function, guarded by the value of v.
+See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-warningdepth" class="anchor" href="#func-verbosity-warningdepth" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) WarningDepth</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">WarningDepth</span></span>(<span class="pl-v">depth</span> <span class="pl-v">int</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>WarningDepth is equivalent to the global WarningDepth function, guarded by the
+value of v. See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-warningf" class="anchor" href="#func-verbosity-warningf" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Warningf</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Warningf</span></span>(<span class="pl-v">format</span> <span class="pl-v">string</span>, <span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Warningf is equivalent to the global Warningf function, guarded by the value of
+v. See the documentation of V for usage.</p>
+
+<h4>
+<a id="func-verbosity-warningln" class="anchor" href="#func-verbosity-warningln" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>func (Verbosity) Warningln</h4>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">func</span> <span class="pl-en">(<span class="pl-v">v</span> <span class="pl-v">Verbosity</span>) <span class="pl-en">Warningln</span></span>(<span class="pl-v">args</span> ...<span class="pl-v">interface</span>{})</pre></div>
+
+<p>Warningln is equivalent to the global Warningln function, guarded by the value
+of v. See the documentation of V for usage.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/morriswinkler">morriswinkler</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
