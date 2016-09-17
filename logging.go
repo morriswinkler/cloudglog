@@ -97,21 +97,18 @@ func (m *modernLogger) Write(bytes []byte) (int, error) {
 
 	string_ := string(bytes)
 
-	// check for line ending
-	var ln bool
-	if strings.HasSuffix(string_, "\n") {
-		ln = true
+	// splitFunc that splits at avery ' '
+	stringSplit := func(r rune) bool {
+		return r == ' '
 	}
 
 	// split to access Llongfile
-	format := strings.Fields(string_)
+	format := strings.FieldsFunc(string_, stringSplit)
 
-	longFileSplit := func(c rune) bool {
-		return c == '/' || c == ':'
+	// splitFunc for log.Llongfile
+	longFileSplit := func(r rune) bool {
+		return r == '/' || r == ':'
 	}
-
-	// split: package file line
-	//subFormat := strings.FieldsFunc(format[3], longFileSplit)
 
 	var modernLongFile = make([]string, 3)
 
@@ -143,11 +140,6 @@ func (m *modernLogger) Write(bytes []byte) (int, error) {
 
 	// join string
 	modernFormat := strings.Join(format, " ")
-
-	// add line ending if necessary
-	if ln {
-		modernFormat = strings.Join([]string{modernFormat, "\n"}, "")
-	}
 
 	return m.out.Write([]byte(modernFormat))
 }
