@@ -35,11 +35,11 @@ const (
 	ModernFormat                    // modern format `LogType: YYYY:MM:YY HH:SS [package][file][line]	message`
 )
 
-var Format formatType // Current FormatType
+var format formatType
 
 // SetFormat switches the log FormatType
-func SetFormat(format formatType) {
-	Format = format
+func SetFormat(f formatType) {
+	format = f
 	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
 }
 
@@ -185,7 +185,7 @@ func setupLogger(
 }
 
 func LogFilter(w io.Writer, ltype logType) io.Writer {
-	switch Format {
+	switch format {
 	case DefaultFormat:
 		return &defaultLogger{out: w, logType: ltype}
 	case ModernFormat:
@@ -297,7 +297,7 @@ func init() {
 
 	}
 
-	Format = DefaultFormat // init with DefaultFormat
+	format = DefaultFormat // init with DefaultFormat
 	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
 }
 
