@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 const CallDepth = 2
@@ -49,6 +50,70 @@ func initLogger(
 		log.Ldate|log.Ltime|log.Llongfile)
 
 }
+
+type modernLogger struct {
+	out io.Writer
+}
+
+func (m *modernLogger) Write(bytes []byte) (int, error) {
+
+	string_ := string(bytes)
+
+	// check for line ending
+	var ln bool
+	if strings.HasSuffix(string_, "\n") {
+		ln = true
+	}
+
+	// split to access Llongfile
+	format := strings.Fields(string_)
+	longFileSplit := func(c rune) bool {
+		return c == '/' || c == ':'
+	}
+
+	// split: package file line
+	subFormat := strings.FieldsFunc(format[3], longFileSplit)
+
+	var modernFile = make([]string, 3)
+	copy(modernFile, subFormat[len(subFormat)-3:]) // package, file, line
+
+	// add []
+	format[3] = strings.Join([]string{"[", modernFile[0], "]", "[", modernFile[1], "]", "[", modernFile[2], "]", "\t" }, "")
+
+	// join string
+	modernFormat := strings.Join(format, " ")
+
+	// add line ending if necessary
+	if ln {
+		modernFormat = strings.Join([]string{modernFormat, "\n"}, "")
+	}
+
+	return m.out.Write([]byte(modernFormat))
+}
+
+func modernLog(w io.Writer) *modernLogger {
+	return &modernLogger{out: w}
+}
+
+
+// ModernLogging en-/disables modern logging format
+func ModernLogging(set bool) {
+
+	if set {
+		TRACE.SetOutput(modernLog(ioutil.Discard))
+		INFO.SetOutput(modernLog(os.Stdout))
+		WARNING.SetOutput(modernLog(os.Stdout))
+		ERROR.SetOutput(modernLog(os.Stdout))
+		FATAL.SetOutput(modernLog(os.Stdout))
+	} else {
+		TRACE.SetOutput(ioutil.Discard)
+		INFO.SetOutput(os.Stdout)
+		WARNING.SetOutput(os.Stdout)
+		ERROR.SetOutput(os.Stdout)
+		FATAL.SetOutput(os.Stdout)
+	}
+}
+
 
 func init() {
 	initLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
