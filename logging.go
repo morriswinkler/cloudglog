@@ -11,7 +11,18 @@ import (
 	"strings"
 )
 
-const CallDepth = 2
+
+
+// FormatType's are different log output styles
+type FormatType int
+
+const (
+	DefaultFormat FormatType = iota // classic glog format
+	ModernFormat			// modern format `LogType: YYYY:MM:YY HH:SS [package][file][line]	message`
+
+	CallDepth = 2			// depth to trace the caller file
+)
+
 
 var (
 	TRACE   *log.Logger
@@ -21,33 +32,59 @@ var (
 	FATAL   *log.Logger
 
 	LogLevel int
+
+	Format FormatType // Current FormatType
+
 )
 
-func initLogger(
+func setupLogger(
 	traceHandle io.Writer,
 	infoHandle io.Writer,
 	warningHandle io.Writer,
 	errorHandle io.Writer,
 	fatalHandle io.Writer) {
 
-	TRACE = log.New(traceHandle,
-		"TRACE: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+	switch Format {
+	case DefaultFormat: // default log format
+		TRACE = log.New(traceHandle,
+			"TRACE: ",
+			log.Ldate | log.Ltime | log.Llongfile)
 
-	INFO = log.New(infoHandle,
-		"INFO: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+		INFO = log.New(infoHandle,
+			"INFO: ",
+			log.Ldate | log.Ltime | log.Llongfile)
 
-	WARNING = log.New(warningHandle,
-		"WARNING: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+		WARNING = log.New(warningHandle,
+			"WARNING: ",
+			log.Ldate | log.Ltime | log.Llongfile)
 
-	ERROR = log.New(errorHandle,
-		"ERROR: ",
-		log.Ldate|log.Ltime|log.Llongfile)
-	FATAL = log.New(fatalHandle,
-		"Fatal: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+		ERROR = log.New(errorHandle,
+			"ERROR: ",
+			log.Ldate | log.Ltime | log.Llongfile)
+		FATAL = log.New(fatalHandle,
+			"Fatal: ",
+			log.Ldate | log.Ltime | log.Llongfile)
+
+	case ModernFormat: // modern log format
+		TRACE = log.New(ModernLogFilter(traceHandle),
+			"TRACE: ",
+			log.Ldate | log.Ltime | log.Llongfile)
+
+		INFO = log.New(ModernLogFilter(infoHandle),
+			"INFO: ",
+			log.Ldate | log.Ltime | log.Llongfile)
+
+		WARNING = log.New(ModernLogFilter(warningHandle),
+			"WARNING: ",
+			log.Ldate | log.Ltime | log.Llongfile)
+
+		ERROR = log.New(ModernLogFilter(errorHandle),
+			"ERROR: ",
+			log.Ldate | log.Ltime | log.Llongfile)
+		FATAL = log.New(ModernLogFilter(fatalHandle),
+			"Fatal: ",
+			log.Ldate | log.Ltime | log.Llongfile)
+	}
 
 }
 
@@ -55,6 +92,7 @@ type modernLogger struct {
 	out io.Writer
 }
 
+// TODO: check efficiency and maybe reimplement in []byte operations
 func (m *modernLogger) Write(bytes []byte) (int, error) {
 
 	string_ := string(bytes)
@@ -67,18 +105,41 @@ func (m *modernLogger) Write(bytes []byte) (int, error) {
 
 	// split to access Llongfile
 	format := strings.Fields(string_)
+
 	longFileSplit := func(c rune) bool {
 		return c == '/' || c == ':'
 	}
 
 	// split: package file line
-	subFormat := strings.FieldsFunc(format[3], longFileSplit)
+	//subFormat := strings.FieldsFunc(format[3], longFileSplit)
 
-	var modernFile = make([]string, 3)
-	copy(modernFile, subFormat[len(subFormat)-3:]) // package, file, line
+	var modernLongFile = make([]string, 3)
 
-	// add []
-	format[3] = strings.Join([]string{"[", modernFile[0], "]", "[", modernFile[1], "]", "[", modernFile[2], "]", "\t" }, "")
+	// if the log prefix does not end with a space
+	// extract log.Llongfile differently
+	formatByte := []byte(format[3])
+	if (formatByte[0] == '/') && (formatByte[len(formatByte)-1] == ':') {
+
+		// split: package file line
+		subFormat := strings.FieldsFunc(format[3], longFileSplit)
+		// prefix contains a trailing whitespace
+		copy(modernLongFile, subFormat[len(subFormat) - 3:]) // package, file, line
+
+		// add []'s and a trailing tab
+		format[3] = strings.Join([]string{"[", modernLongFile[0], "]", "[", modernLongFile[1], "]", "[:", modernLongFile[2], "]", "\t" }, "")
+
+	} else {
+
+		// prefix contains no trailing whitespace
+		subFormat := strings.FieldsFunc(format[2], longFileSplit)
+		copy(modernLongFile, subFormat[len(subFormat) - 3:]) // package, file, line
+
+		format = append(format[:2], format[3:]...) // delete format[3]
+
+		// add []'s and a trailing tab
+		format[2] = strings.Join([]string{"[", modernLongFile[0], "]", "[", modernLongFile[1], "]", "[:", modernLongFile[2], "]", "\t" }, "")
+
+	}
 
 	// join string
 	modernFormat := strings.Join(format, " ")
@@ -91,32 +152,20 @@ func (m *modernLogger) Write(bytes []byte) (int, error) {
 	return m.out.Write([]byte(modernFormat))
 }
 
-func modernLog(w io.Writer) *modernLogger {
+func ModernLogFilter(w io.Writer) *modernLogger {
 	return &modernLogger{out: w}
 }
 
 
-// ModernLogging en-/disables modern logging format
-func ModernLogging(set bool) {
+// SetFormat switches the log FormatType
+func SetFormat(format FormatType) {
 
-	if set {
-		TRACE.SetOutput(modernLog(ioutil.Discard))
-		INFO.SetOutput(modernLog(os.Stdout))
-		WARNING.SetOutput(modernLog(os.Stdout))
-		ERROR.SetOutput(modernLog(os.Stdout))
-		FATAL.SetOutput(modernLog(os.Stdout))
-	} else {
-		TRACE.SetOutput(ioutil.Discard)
-		INFO.SetOutput(os.Stdout)
-		WARNING.SetOutput(os.Stdout)
-		ERROR.SetOutput(os.Stdout)
-		FATAL.SetOutput(os.Stdout)
-	}
+	Format = format
+	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
 }
 
-
 func init() {
-	initLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
+
 	// get LogLevel from env
 	getLogLevel := os.Getenv("LOG_LEVEL")
 	if len(getLogLevel) == 0 {
@@ -134,6 +183,8 @@ func init() {
 
 	}
 
+	Format = DefaultFormat // init with DefaultFormat
+	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
 }
 
 // Info logs to the INFO log.
