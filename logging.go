@@ -6,7 +6,7 @@
 // define the log output format, use FormatStyle(style) to set one of:
 //
 //  DefaultFormat		: the original glog format
-//  ModernFormat		: shorter format, uses brackets to separate Package File and Line
+//  ModernFormat		: shorter format, uses brackets to sep Package, File, Line
 //
 // Example:
 //  cloudglog.FormatStyle(cloudglog.ModernFormat)
@@ -25,6 +25,15 @@
 //
 // Example:
 //  cloudglog.ColorStyle(cloudglog.FullColor)
+//
+// LogFilter can be used to filter logging of other packages
+// that provide a way to set the log output. It takes a io.Writer
+// as output and a logType and returns a io.Writer.
+//
+// Example:
+//   ERROR = log.New(cloudglog.LogFilter(os.Stdout, cloudglog.ERROR),
+//  	"ERROR: ",
+//  	log.Ldate|log.Ltime|log.Llongfile)
 //
 package cloudglog
 
