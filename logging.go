@@ -480,12 +480,12 @@ func Exitf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-// Verbose is a boolean type that implements Infof (like Printf) etc.
+// Verbosity is a boolean type that implements Infof (like Printf) etc.
 // See the documentation of V for more information.
-type Verbose bool
+type Verbosity bool
 
 // V reports whether verbosity at the call site is at least the requested level.
-// The returned value is a boolean of type Verbose, which implements Info, Infoln
+// The returned value is a boolean of type Verbosity, which implements Info, Infoln
 // and Infof. These methods will write to the Info log if called.
 // Thus, one may write either
 //	if cloudglog.V(2) { cloudglog.Info("log this") }
@@ -493,21 +493,21 @@ type Verbose bool
 //	cloudglog.V(2).Info("log this")
 // The second form is shorter but the first is cheaper if logging is off because it does
 // not evaluate its arguments.
-func V(level int) Verbose {
+func V(level int) Verbosity {
 	// This function tries hard to be cheap unless there's work to do.
 	// The fast path is two atomic loads and compares.
 
 	// Here is a cheap but safe test to see if V logging is enabled globally.
 	if LogLevel >= level {
-		return Verbose(true)
+		return Verbosity(true)
 	}
 
-	return Verbose(false)
+	return Verbosity(false)
 }
 
 // Info is equivalent to the global Info function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Info(args ...interface{}) {
+func (v Verbosity) Info(args ...interface{}) {
 	if v {
 		infoLog.Output(CallDepth+1, fmt.Sprint(args...))
 	}
@@ -515,7 +515,7 @@ func (v Verbose) Info(args ...interface{}) {
 
 // InfoDepth is equivalent to the global InfoDepth function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) InfoDepth(depth int, args ...interface{}) {
+func (v Verbosity) InfoDepth(depth int, args ...interface{}) {
 	if v {
 		infoLog.Output(depth, fmt.Sprint(args...))
 	}
@@ -523,7 +523,7 @@ func (v Verbose) InfoDepth(depth int, args ...interface{}) {
 
 // Infoln is equivalent to the global Infoln function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Infoln(args ...interface{}) {
+func (v Verbosity) Infoln(args ...interface{}) {
 	if v {
 		infoLog.Output(CallDepth+1, fmt.Sprintln(args...))
 	}
@@ -531,7 +531,7 @@ func (v Verbose) Infoln(args ...interface{}) {
 
 // Infof is equivalent to the global Infof function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Infof(format string, args ...interface{}) {
+func (v Verbosity) Infof(format string, args ...interface{}) {
 	if v {
 		var buf bytes.Buffer
 		fmt.Fprintf(&buf, format, args...)
@@ -544,7 +544,7 @@ func (v Verbose) Infof(format string, args ...interface{}) {
 
 // Warning is equivalent to the global Warning function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Warning(args ...interface{}) {
+func (v Verbosity) Warning(args ...interface{}) {
 	if v {
 		warningLog.Output(CallDepth+1, fmt.Sprint(args...))
 	}
@@ -552,7 +552,7 @@ func (v Verbose) Warning(args ...interface{}) {
 
 // WarningDepth is equivalent to the global WarningDepth function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) WarningDepth(depth int, args ...interface{}) {
+func (v Verbosity) WarningDepth(depth int, args ...interface{}) {
 	if v {
 		warningLog.Output(depth, fmt.Sprint(args...))
 	}
@@ -560,7 +560,7 @@ func (v Verbose) WarningDepth(depth int, args ...interface{}) {
 
 // Warningln is equivalent to the global Warningln function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Warningln(args ...interface{}) {
+func (v Verbosity) Warningln(args ...interface{}) {
 	if v {
 		warningLog.Output(CallDepth+1, fmt.Sprintln(args...))
 	}
@@ -568,7 +568,7 @@ func (v Verbose) Warningln(args ...interface{}) {
 
 // Warningf is equivalent to the global Warningf function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Warningf(format string, args ...interface{}) {
+func (v Verbosity) Warningf(format string, args ...interface{}) {
 	if v {
 		warningLog.Output(CallDepth+1, fmt.Sprintf(format, args...))
 	}
@@ -576,7 +576,7 @@ func (v Verbose) Warningf(format string, args ...interface{}) {
 
 // Error is equivalent to the global Error function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Error(args ...interface{}) {
+func (v Verbosity) Error(args ...interface{}) {
 	if v {
 		errorLog.Output(CallDepth+1, fmt.Sprint(args...))
 	}
@@ -584,7 +584,7 @@ func (v Verbose) Error(args ...interface{}) {
 
 // ErrorDepth is equivalent to the global ErrorDepth function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) ErrorDepth(depth int, args ...interface{}) {
+func (v Verbosity) ErrorDepth(depth int, args ...interface{}) {
 	if v {
 		errorLog.Output(depth, fmt.Sprint(args...))
 	}
@@ -592,7 +592,7 @@ func (v Verbose) ErrorDepth(depth int, args ...interface{}) {
 
 // Errorln is equivalent to the global Errorln function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Errorln(args ...interface{}) {
+func (v Verbosity) Errorln(args ...interface{}) {
 	if v {
 		errorLog.Output(CallDepth+1, fmt.Sprintln(args...))
 	}
@@ -600,7 +600,7 @@ func (v Verbose) Errorln(args ...interface{}) {
 
 // Errorf is equivalent to the global Errorf function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Errorf(format string, args ...interface{}) {
+func (v Verbosity) Errorf(format string, args ...interface{}) {
 	if v {
 		var buf bytes.Buffer
 		fmt.Fprintf(&buf, format, args...)
@@ -613,7 +613,7 @@ func (v Verbose) Errorf(format string, args ...interface{}) {
 
 // Fatal is equivalent to the global Fatal function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Fatal(args ...interface{}) {
+func (v Verbosity) Fatal(args ...interface{}) {
 	if v {
 		fatalLog.Output(CallDepth+1, fmt.Sprint(args...))
 	}
@@ -621,7 +621,7 @@ func (v Verbose) Fatal(args ...interface{}) {
 
 // FatalDepth is equivalent to the global FatalDepth function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) FatalDepth(depth int, args ...interface{}) {
+func (v Verbosity) FatalDepth(depth int, args ...interface{}) {
 	if v {
 		fatalLog.Output(depth, fmt.Sprint(args...))
 	}
@@ -629,7 +629,7 @@ func (v Verbose) FatalDepth(depth int, args ...interface{}) {
 
 // Fatalln is equivalent to the global Fatalln function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Fatalln(args ...interface{}) {
+func (v Verbosity) Fatalln(args ...interface{}) {
 	if v {
 		fatalLog.Output(CallDepth+1, fmt.Sprintln(args...))
 	}
@@ -637,7 +637,7 @@ func (v Verbose) Fatalln(args ...interface{}) {
 
 // Fatalf is equivalent to the global Fatalf function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Fatalf(format string, args ...interface{}) {
+func (v Verbosity) Fatalf(format string, args ...interface{}) {
 	if v {
 		var buf bytes.Buffer
 		fmt.Fprintf(&buf, format, args...)
@@ -650,7 +650,7 @@ func (v Verbose) Fatalf(format string, args ...interface{}) {
 
 // Exit is equivalent to the global Exit function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Exit(args ...interface{}) {
+func (v Verbosity) Exit(args ...interface{}) {
 	if v {
 		fatalLog.Output(CallDepth+1, fmt.Sprint(args...))
 		os.Exit(1)
@@ -659,7 +659,7 @@ func (v Verbose) Exit(args ...interface{}) {
 
 // c is equivalent to the global Exitln function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) ExitDepth(depth int, args ...interface{}) {
+func (v Verbosity) ExitDepth(depth int, args ...interface{}) {
 	if v {
 		fatalLog.Output(depth, fmt.Sprint(args...))
 		os.Exit(1)
@@ -668,7 +668,7 @@ func (v Verbose) ExitDepth(depth int, args ...interface{}) {
 
 // Exitln is equivalent to the global Exitln function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Exitln(args ...interface{}) {
+func (v Verbosity) Exitln(args ...interface{}) {
 	if v {
 		fatalLog.Output(CallDepth+1, fmt.Sprintln(args...))
 		os.Exit(1)
@@ -677,7 +677,7 @@ func (v Verbose) Exitln(args ...interface{}) {
 
 // Exitf is equivalent to the global Exitf  function, guarded by the value of v.
 // See the documentation of V for usage.
-func (v Verbose) Exitf(format string, args ...interface{}) {
+func (v Verbosity) Exitf(format string, args ...interface{}) {
 	if v {
 		var buf bytes.Buffer
 		fmt.Fprintf(&buf, format, args...)
