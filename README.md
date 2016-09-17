@@ -87,7 +87,7 @@ const (
 
 ```go
 const (
-	// colorFormat used to set colloring style
+	// colorStyle used to set coloring
 	NoColor                  colorStyle = iota // no colors
 	PrefixColor                                // colorize from prefix until line number
 	PrefixBoldColor                            // colorize from prefix until line number with bold colors
