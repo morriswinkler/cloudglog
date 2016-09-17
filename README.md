@@ -61,7 +61,8 @@ const (
 
 ```go
 const (
-	// logType, only used in LogFilter to set log prefix and color if in color mode
+	// logType, only used in LogFilter to set the right color
+	// TODO: while reworking LogFilter overhink this too
 	TRACE   logType = iota // TRACE: ColorCyan
 	INFO                   // INFO: ColorGreen
 	WARNING                // WARNING: ColorYellow
