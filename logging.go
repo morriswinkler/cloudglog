@@ -36,14 +36,14 @@ var LogLevel int // logging level for V() type calls, can also be set by LOG_LEV
 type formatStyle int
 
 const (
-	// formatType controlss the output format style
+	// formatStyle controlss the output format
 	DefaultFormat formatStyle = iota // PREFIX: YYYY/MM/DD HH:MM:SS log.Llongfile Message
 	ModernFormat                     // PREFIX: YYYY/MM/DD HH:MM:SS [Package][File][:Line] Message
 )
 
 var currentFormat formatStyle
 
-// SetFormat changes the formatType
+// FormatStyle changes the formatStyle
 func FormatStyle(f formatStyle) {
 	currentFormat = f
 	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
@@ -74,21 +74,21 @@ const (
 	ColorWhite
 )
 
-type colorFormat int
+type colorStyle int
 
 const (
 	// colorFormat used to set colloring style
-	NoColor                  colorFormat = iota // no colors
-	PrefixColor                                 // colorize from prefix until line number
-	PrefixBoldColor                             // colorize from prefix until line number with bold colors
-	FullColor                                   // colorize everything
-	FullBoldColor                               // colorize everything with bold colors
-	FullColorWithBoldMessage                    // colorize everything with bold colored message
-	FullColorWithBoldPrefix                     // colorize everything with bold coloring from prefix until line number
+	NoColor                  colorStyle = iota // no colors
+	PrefixColor                                // colorize from prefix until line number
+	PrefixBoldColor                            // colorize from prefix until line number with bold colors
+	FullColor                                  // colorize everything
+	FullBoldColor                              // colorize everything with bold colors
+	FullColorWithBoldMessage                   // colorize everything with bold colored message
+	FullColorWithBoldPrefix                    // colorize everything with bold coloring from prefix until line number
 )
 
 var (
-	colorFormating colorFormat = NoColor
+	colorFormating colorStyle = NoColor
 
 	colors = []string{
 		TRACE:   colorSeq(ColorCyan),
@@ -154,8 +154,8 @@ func addColor(lType logType, prefixEnd int, message []string) []string {
 }
 
 // SetColor defines the coloring format
-func SetColors(cformat colorFormat) {
-	colorFormating = cformat
+func ColorsStle(cStyle colorStyle) {
+	colorFormating = cStyle
 }
 
 var (
