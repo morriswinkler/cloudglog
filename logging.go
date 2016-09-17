@@ -1,3 +1,15 @@
+// Package cloudglog is a logger that outputs to stdout.
+// It is based on glog without any buffering.
+//
+// Features:
+//
+// FormatType
+// There are two format styles implemented.
+//
+// DefaultFormat: PREFIX: YYYY/MM/DD HH:MM:SS Llongfile:Line: Message
+// ModernFormat:  PREFIX: YYYY/MM/DD HH:MM:SS [package][file][:Line] Message
+//
+// Colored output can be turned on with SetColor()
 package cloudglog
 
 import (
@@ -11,30 +23,39 @@ import (
 	"strings"
 )
 
-// FormatType's are different log output styles
-type FormatType int
+const CallDepth = 2 // depth to trace the caller file
+
+var LogLevel int // logging level for V() type calls
+
+type formatType int
 
 const (
-	DefaultFormat FormatType = iota // classic glog format
+	DefaultFormat formatType = iota // classic glog format
 	ModernFormat                    // modern format `LogType: YYYY:MM:YY HH:SS [package][file][line]	message`
-
-	CallDepth = 2 // depth to trace the caller file
 )
 
-type LogType int
+var Format formatType // Current FormatType
+
+// SetFormat switches the log FormatType
+func SetFormat(format formatType) {
+	Format = format
+	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
+}
+
+type logType int
 
 const (
-	TRACE = iota
+	TRACE logType = iota
 	INFO
 	WARNING
 	ERROR
 	FATAL
 )
 
-type color int
+type colorType int
 
 const (
-	ColorBlack = iota + 30
+	ColorBlack colorType = iota + 30
 	ColorRed
 	ColorGreen
 	ColorYellow
@@ -48,34 +69,34 @@ var (
 	colorFormating colorFormat = NoColor
 
 	colors = []string{
-		TRACE:   ColorSeq(ColorCyan),
-		INFO:    ColorSeq(ColorGreen),
-		WARNING: ColorSeq(ColorYellow),
-		ERROR:   ColorSeq(ColorRed),
-		FATAL:   ColorSeq(ColorMagenta),
+		TRACE:   colorSeq(ColorCyan),
+		INFO:    colorSeq(ColorGreen),
+		WARNING: colorSeq(ColorYellow),
+		ERROR:   colorSeq(ColorRed),
+		FATAL:   colorSeq(ColorMagenta),
 	}
 
 	boldcolors = []string{
-		TRACE:   ColorSeqBold(ColorCyan),
-		INFO:    ColorSeqBold(ColorGreen),
-		WARNING: ColorSeqBold(ColorYellow),
-		ERROR:   ColorSeqBold(ColorRed),
-		FATAL:   ColorSeqBold(ColorMagenta),
+		TRACE:   colorSeqBold(ColorCyan),
+		INFO:    colorSeqBold(ColorGreen),
+		WARNING: colorSeqBold(ColorYellow),
+		ERROR:   colorSeqBold(ColorRed),
+		FATAL:   colorSeqBold(ColorMagenta),
 	}
 )
 
-func ColorSeq(color color) string {
+func colorSeq(color colorType) string {
 	return fmt.Sprintf("\033[%dm", int(color))
 }
 
-func ColorSeqBold(color color) string {
+func colorSeqBold(color colorType) string {
 	return fmt.Sprintf("\033[%d;1m", int(color))
 }
 
 type colorFormat int
 
 const (
-	NoColor = iota // no color
+	NoColor colorFormat = iota // no color
 	PrefixColor
 	PrefixBoldColor
 	FullColor
@@ -84,7 +105,7 @@ const (
 	FullColorWithBoldPrefix
 )
 
-func addColor(lType LogType, prefixEnd int, message []string) []string {
+func addColor(lType logType, prefixEnd int, message []string) []string {
 
 	var col, bcol string
 
@@ -133,11 +154,6 @@ var (
 	warningLog *log.Logger
 	errorLog   *log.Logger
 	fatalLog   *log.Logger
-
-	LogLevel int
-
-	Format FormatType // Current FormatType
-
 )
 
 func setupLogger(
@@ -167,7 +183,7 @@ func setupLogger(
 		log.Ldate|log.Ltime|log.Llongfile)
 }
 
-func LogFilter(w io.Writer, ltype LogType) io.Writer {
+func LogFilter(w io.Writer, ltype logType) io.Writer {
 	switch Format {
 	case DefaultFormat:
 		return &defaultLogger{out: w, logType: ltype}
@@ -180,7 +196,7 @@ func LogFilter(w io.Writer, ltype LogType) io.Writer {
 
 type defaultLogger struct {
 	out     io.Writer
-	logType LogType
+	logType logType
 }
 
 func (d *defaultLogger) Write(bytes []byte) (int, error) {
@@ -213,7 +229,7 @@ func (d *defaultLogger) Write(bytes []byte) (int, error) {
 
 type modernLogger struct {
 	out     io.Writer
-	logType LogType
+	logType logType
 }
 
 // TODO: check efficiency and maybe reimplement in []byte operations
@@ -257,15 +273,8 @@ func (m *modernLogger) Write(bytes []byte) (int, error) {
 	return m.out.Write([]byte(modernFormat))
 }
 
-func ModernLogFilter(w io.Writer, ltype LogType) *modernLogger {
+func ModernLogFilter(w io.Writer, ltype logType) *modernLogger {
 	return &modernLogger{out: w, logType: ltype}
-}
-
-// SetFormat switches the log FormatType
-func SetFormat(format FormatType) {
-
-	Format = format
-	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
 }
 
 func init() {
