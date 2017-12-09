@@ -1,12 +1,28 @@
 // Package cloudglog is a logger that outputs to stdout. It is strongly based on glog but
 // without any kind of buffering.
 //
+// LogFile
+//
+// By default logging goes to stdout, use LogFile(file)
+//
+// Example:
+//    f, err := os.open("filename")
+//    if err != nil {
+//        cloudglog.Fatal(err)
+//    }
+//
+//    w := bufio.NewWriter(f)
+//    defer w.Flush()
+//
+//    cloudglog.LogFile(w)
+//
+//
 // Format styles
 //
 // define the log output format, use FormatStyle(style) to set one of:
 //
 //  DefaultFormat		: the original glog format
-//  ModernFormat		: shorter format, uses brackets to sep Package, File, Line
+//  ModernFormat		: shorter format, uses brackets to separate Package, File, Line
 //
 // Example:
 //  cloudglog.FormatStyle(cloudglog.ModernFormat)
@@ -69,8 +85,31 @@ var currentFormat formatStyle
 // FormatStyle changes the formatStyle
 func FormatStyle(f formatStyle) {
 	currentFormat = f
-	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
+	setupLogger(logFile, logFile, logFile, logFile, logFile)
 }
+
+var logFile io.Writer = os.Stdout
+
+// LogFile sets the logfile to write to
+func LogFile(file io.Writer) {
+	logFile = file
+	setupLogger(logFile, logFile, logFile, logFile, logFile)
+}
+
+// can be set to log.Llongfile or log.Lshortfile
+var lFileLength = log.Llongfile
+
+
+// LogFileName will log only file names
+func LogFileName() {
+	lFileLength = log.Lshortfile
+}
+
+// LogFilePath will log path and file name, this is the default
+func LogFilePath() {
+	lFileLength = log.Llongfile
+}
+
 
 type logType int
 
@@ -199,22 +238,22 @@ func setupLogger(
 
 	traceLog = log.New(LogFilter(traceHandle, TRACE),
 		"TRACE: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+		log.Ldate|log.Ltime|lFileLength)
 
 	infoLog = log.New(LogFilter(infoHandle, INFO),
 		"INFO: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+		log.Ldate|log.Ltime|lFileLength)
 
 	warningLog = log.New(LogFilter(warningHandle, WARNING),
 		"WARNING: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+		log.Ldate|log.Ltime|lFileLength)
 
 	errorLog = log.New(LogFilter(errorHandle, ERROR),
 		"ERROR: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+		log.Ldate|log.Ltime|lFileLength)
 	fatalLog = log.New(LogFilter(fatalHandle, FATAL),
 		"Fatal: ",
-		log.Ldate|log.Ltime|log.Llongfile)
+		log.Ldate|log.Ltime|lFileLength)
 }
 
 // LogFilter can be used to filter logging of other packages
@@ -334,6 +373,7 @@ func init() {
 	currentFormat = DefaultFormat // init with DefaultFormat
 	setupLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, os.Stderr)
 }
+
 
 // Info logs to the INFO log.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
