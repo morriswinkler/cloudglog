@@ -1,5 +1,5 @@
 # cloudglog
---
+
     import "github.com/morriswinkler/cloudglog"
 
 Package cloudglog is a logger that outputs to stdout. It is strongly based on
@@ -23,7 +23,7 @@ Example:
     cloudglog.LogFile(w)
 
 
-Format styles
+### Format Styles
 
 define the log output format, use FormatStyle(style) to set one of:
 

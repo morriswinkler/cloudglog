@@ -17,7 +17,7 @@
 //    cloudglog.LogFile(w)
 //
 //
-// Format styles
+// Format Styles
 //
 // define the log output format, use FormatStyle(style) to set one of:
 //
