@@ -6,12 +6,29 @@ Package cloudglog is a logger that outputs to stdout. It is strongly based on
 glog but without any kind of buffering.
 
 
+### LogFile
+
+By default logging goes to stdout, use LogFile(file)
+
+Example:
+
+    f, err := os.open("filename")
+    if err != nil {
+        cloudglog.Fatal(err)
+    }
+
+    w := bufio.NewWriter(f)
+    defer w.Flush()
+
+    cloudglog.LogFile(w)
+
+
 Format styles
 
 define the log output format, use FormatStyle(style) to set one of:
 
     DefaultFormat		: the original glog format
-    ModernFormat		: shorter format, uses brackets to sep Package, File, Line
+    ModernFormat		: shorter format, uses brackets to separate Package, File, Line
 
 Example:
 
@@ -249,6 +266,27 @@ func Infoln(args ...interface{})
 ```
 Infoln logs to the INFO log. Arguments are handled in the manner of fmt.Println;
 a newline is appended if missing.
+
+#### func  LogFile
+
+```go
+func LogFile(file io.Writer)
+```
+LogFile sets the logfile to write to
+
+#### func  LogFileName
+
+```go
+func LogFileName()
+```
+LogFileName will log only file names
+
+#### func  LogFilePath
+
+```go
+func LogFilePath()
+```
+LogFilePath will log path and file name, this is the default
 
 #### func  LogFilter
 
