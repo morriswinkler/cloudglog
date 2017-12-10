@@ -132,7 +132,7 @@ var LogLevel int // logging level for V() type calls, can also be set by LOG_LEV
 ```go
 func ColorsStyle(cStyle colorStyle)
 ```
-SetColor defines the coloring format
+ColorsStyle defines the coloring format
 
 #### func  Error
 

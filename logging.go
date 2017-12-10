@@ -217,7 +217,7 @@ func addColor(lType logType, prefixEnd int, message []string) []string {
 	return message
 }
 
-// SetColor defines the coloring format
+// ColorsStyle defines the coloring format
 func ColorsStyle(cStyle colorStyle) {
 	colorFormating = cStyle
 }
