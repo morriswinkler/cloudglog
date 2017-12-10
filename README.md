@@ -6,6 +6,8 @@ Package cloudglog is a logger that outputs to stdout. It is strongly based on
 glog but without any kind of buffering.
 
 
+![](https://travis-ci.org/morriswinkler/cloudglog.svg?branch=master)
+
 ### LogFile
 
 By default logging goes to stdout, use LogFile(file)
