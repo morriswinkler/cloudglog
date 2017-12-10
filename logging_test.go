@@ -53,18 +53,19 @@ var logCases = []logCase{
 		args: []interface{}{"Errorln"},
 		expected: " Errorln\n",
 	},
-	{
-		name: "Fatal",
-		logFunc: Fatal,
-		args: []interface{}{"Fatal"},
-		expected: " Fatal\n",
-	},
-	{
-		name: "Fatalln",
-		logFunc: Fatalln,
-		args: []interface{}{"Fatalln"},
-		expected: " Fatalln\n",
-	},
+	//{
+	// TODO: test os.Exit(1)
+	//	name: "Fatal",
+	//	logFunc: Fatal,
+	//	args: []interface{}{"Fatal"},
+	//	expected: " Fatal\n",
+	//},
+	//{
+	//	name: "Fatalln",
+	//	logFunc: Fatalln,
+	//	args: []interface{}{"Fatalln"},
+	//	expected: " Fatalln\n",
+	//},
 }
 
 func Test_LogFile(t *testing.T) {
