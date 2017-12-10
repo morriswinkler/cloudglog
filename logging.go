@@ -66,6 +66,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"runtime"
 )
 
 const CallDepth = 2 // depth to trace the caller file
@@ -351,6 +352,27 @@ func (m *modernLogger) Write(bytes []byte) (int, error) {
 	return m.out.Write([]byte(modernFormat))
 }
 
+
+// stacks is a wrapper for runtime.Stack that attempts to recover the data for all goroutines.
+// Todo: wire this func into fatal and panic
+func stacks(all bool) []byte {
+	// We don't know how big the traces are, so grow a few times if they don't fit. Start large, though.
+	n := 10000
+	if all {
+		n = 100000
+	}
+	var trace []byte
+	for i := 0; i < 5; i++ {
+		trace = make([]byte, n)
+		nbytes := runtime.Stack(trace, all)
+		if nbytes < len(trace) {
+			return trace[:nbytes]
+		}
+		n *= 2
+	}
+	return trace
+}
+
 func init() {
 
 	// get LogLevel from env
@@ -463,17 +485,21 @@ func Errorf(format string, args ...interface{}) {
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Fatal(args ...interface{}) {
 	fatalLog.Output(CallDepth, fmt.Sprint(args...))
+	// Todo: check if we need to flush here.
+	os.Exit(1)
 }
 
 // FatalDepth acts as FATAL but uses depth to determine which call frame to log.
 // FatalDepth(0, "msg") is the same as Fatal("msg").
 func FatalDepth(depth int, args ...interface{}) {
 	fatalLog.Output(depth, fmt.Sprint(args...))
+	os.Exit(1)
 }
 
 // Fatalln logs to the FATAL log.
 func Fatalln(args ...interface{}) {
 	fatalLog.Output(CallDepth, fmt.Sprintln(args...))
+	os.Exit(1)
 }
 
 // Fatalf logs to the FATAL log.
@@ -486,6 +512,7 @@ func Fatalf(format string, args ...interface{}) {
 		buf.WriteByte('\n')
 	}
 	fatalLog.Output(CallDepth, buf.String())
+	os.Exit(1)
 }
 
 // Exit logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
