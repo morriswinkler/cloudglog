@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"github.com/stretchr/testify/assert"
 	"strings"
-	"os"
 )
 
 
@@ -86,7 +85,4 @@ func Test_LogFile(t *testing.T) {
 
 		b.Reset()
 	}
-
-	os.Open()
-
 }
